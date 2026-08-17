@@ -24,7 +24,7 @@ export type ProgressCallback = (
   status: 'generating' | 'done' | 'error'
 ) => void;
 
-const MODEL_NAME = 'gemini-1.5-flash';
+const MODEL_NAME = 'gemini-1.5-flash';const MODEL_NAME = 'gemini-1.5-flash-latest';
 
 function buildSystemPrompt(): string {
   return `You are an expert academic writer specializing in Indian university project reports, specifically for Kakatiya University, Warangal, Telangana.
