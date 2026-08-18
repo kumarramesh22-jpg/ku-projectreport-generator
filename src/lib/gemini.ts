@@ -44,7 +44,7 @@ export async function generateChapter(
     
     if (!chapter) {
       // FIXED: Converted single quotes to backticks
-      throw new Error(Chapter ${chapterNum} configuration not found.);
+      throw new Error("Chapter " + chapterNum +" configuration not found.");
     }
 
     onProgress('generating');
@@ -84,7 +84,7 @@ export async function generateChapter(
   } catch (error) {
     onProgress('error');
     // FIXED: Converted single quotes to backticks
-    console.error('Generation error in Chapter ${chapterNum}:', error);
+    console.error("Generation error in Chapter " + chapterNum + ":",error);
     throw error;
   }
 }
