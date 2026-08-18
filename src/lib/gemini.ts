@@ -16,10 +16,8 @@ export interface ChapterResult {
   content: string;
 }
 
-// Define the model variable cleanly using const
 const MODEL_NAME = "gemini-2.0-flash";
 
-// Force the production-grade stable API version to prevent 404 errors
 const genAI = new GoogleGenerativeAI(
   import.meta.env.VITE_GEMINI_API_KEY || '',
   { apiVersion: 'v1' }
@@ -43,8 +41,7 @@ export async function generateChapter(
     const chapter = chapters.find(c => c.number === chapterNum);
     
     if (!chapter) {
-      // FIXED: Converted single quotes to backticks
-      throw new Error("Chapter " + chapterNum +" configuration not found.");
+      throw new Error("Chapter " + chapterNum + " configuration not found.");
     }
 
     onProgress('generating');
@@ -83,13 +80,11 @@ export async function generateChapter(
     return text;
   } catch (error) {
     onProgress('error');
-    // FIXED: Converted single quotes to backticks
-    console.error("Generation error in Chapter " + chapterNum + ":",error);
+    console.error("Generation error in Chapter " + chapterNum + ":", error);
     throw error;
   }
 }
 
-// FIXED: Added the required generateReport export that your hook was missing
 export async function generateReport(
   context: GenerationContext,
   onProgress: (status: string) => void
@@ -98,7 +93,7 @@ export async function generateReport(
   const results: ChapterResult[] = [];
 
   for (const ch of chapters) {
-    onProgress(Generating Chapter ${ch.number}...);
+    onProgress("Generating Chapter " + ch.number + "...");
     const content = await generateChapter(context, ch.number, () => {});
     results.push({
       number: ch.number,
