@@ -16,7 +16,7 @@ export interface ChapterResult {
   content: string;
 }
 
-const MODEL_NAME = "gemini-3.5-flash";
+const MODEL_NAME = "gemini-1.5-flash";
 
 const genAI = new GoogleGenerativeAI(
   import.meta.env.VITE_GEMINI_API_KEY || '',
