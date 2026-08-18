@@ -11,7 +11,7 @@ export interface ChapterProgress {
   status: ChapterStatus;
 }
 
-export function useReportGenerator() {
+export function useReportGenerator() {,const t = (key:string) => key;
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState<ChapterProgress[]>([]);
   const [error, setError] = useState<string | null>(null);
