@@ -31,6 +31,7 @@ export default function GenerateView({
   onViewReport,
   hasReport,
 }: GenerateViewProps) {
+  const t = (key: string) => key;
   if (!submission) {
     return (
       <div className="card flex flex-col items-center justify-center px-6 py-16 text-center animate-fade-in">
