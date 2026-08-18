@@ -82,7 +82,7 @@ export async function generateChapter(
     return text;
   } catch (error) {
     onProgress('error');
-    console.error(Generation error in Chapter ${chapterNum}:, error);
+    console.error('Generation error in Chapter ${chapterNum}:', error);
     throw error;
   }
 }
