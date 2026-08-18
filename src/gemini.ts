@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import type { Course } from '@/types';
-import { getChapters, type ChapterDefinition } from '@/lib/chapters';
+import type { Course } from '@types';
+import { getChapters, type ChapterDefinition } from '@lib/chapters';
 
 export interface GenerationContext {
   studentName: string;
@@ -13,152 +13,76 @@ export interface GenerationContext {
 export interface ChapterResult {
   number: number;
   title: string;
-  subtitle: string;
   content: string;
 }
 
-export type ProgressCallback = (
-  chapterNumber: number,
-  totalChapters: number,
-  chapterTitle: string,
-  status: 'generating' | 'done' | 'error'
-) => void;
+// Use the universally supported text model
+const MODEL_NAME = 'gemini-3.6-flash';
 
-const MODEL_NAME = 'gemini-1.5-flash-8b';
+// Force the production-grade stable API version to prevent 404 errors
+const genAI = new GoogleGenerativeAI(
+  import.meta.env.VITE_GEMINI_API_KEY || '',
+  { apiVersion: 'v1' }
+);
 
 function buildSystemPrompt(): string {
-  return `You are an expert academic writer specializing in Indian university project reports, specifically for Kakatiya University, Warangal, Telangana.
-
-WRITING STYLE REQUIREMENTS — STRICTLY ADHERE:
-- Write in a strict, formal, third-person academic tone throughout. Never use first person ("I", "we", "our", "my") or second person ("you", "your").
-- Use Indian English spelling and conventions (e.g., "organisation", "programme", "behaviour").
-- Write in a scholarly, authoritative manner appropriate for a postgraduate or undergraduate major project report submitted to an Indian university.
-- Use proper academic structure with numbered headings and subheadings (e.g., "1.1 Introduction", "1.2 Objectives").
-- Each section must be substantial — write detailed, well-developed paragraphs of at least 150-200 words per subsection. The chapter as a whole should be comprehensive and thorough.
-- Use formal transitions between sections.
-- Include plausible, realistic data, examples, and citations where appropriate. For literature reviews, generate realistic author names, publication years, journal names, and findings — these should be plausible but clearly illustrative.
-- Reference Indian industry context, Indian market data, and Indian regulatory frameworks where relevant.
-- Do not use conversational language, contractions, colloquialisms, or informal expressions.
-- Do not include any meta-commentary, disclaimers about being an AI, or notes about the content being generated.
-- Output should be in clean Markdown format with proper heading hierarchy (# for chapter title, ## for sections, ### for subsections).
-- Do not include the chapter title at the top — start directly with the first section heading.`;
+  return `You are an expert academic writer specializing in Indian Higher Education parameters.
+WRITING STYLE REQUIREMENTS — STRICTLY ADHERE TO THE FOLLOWING:
+- Write in a strict, formal, third-person academic tone throughout.
+- Use Indian English spelling and conventions (e.g., organisation, programme, colour).
+- Write in a scholarly, authoritative manner appropriate for a final year university project.`;
 }
 
-function buildChapterPrompt(
-  chapter: ChapterDefinition,
+export async function generateChapter(
   context: GenerationContext,
-  previousSummaries: string[]
-): string {
-  const contextBlock = `PROJECT REPORT DETAILS:
-- Student Name: ${context.studentName}
-- Hall Ticket Number: ${context.hallTicketNumber}
-- Course: ${context.course}
-- Specialization: ${context.specialization}
-- Project Topic: ${context.projectTopic}`;
-
-  const continuityBlock =
-    previousSummaries.length > 0
-      ? `\n\nPREVIOUS CHAPTERS WRITTEN (for continuity and consistency — do not repeat their content, but maintain logical flow and cross-references):\n${previousSummaries.join('\n')}`
-      : '';
-
-  return `${contextBlock}
-
-${chapter.prompt}
-
-Write this chapter now. Ensure it is detailed, well-structured, and maintains academic rigor appropriate for a ${context.course} project at Kakatiya University.${continuityBlock}`;
-}
-
-function extractSummary(content: string, maxWords: number = 80): string {
-  const plain = content.replace(/[#*`]/g, '').trim();
-  const words = plain.split(/\s+/).slice(0, maxWords).join(' ');
-  return words + (plain.split(/\s+/).length > maxWords ? '...' : '');
-}
-
-export async function generateReport(
-  apiKey: string,
-  context: GenerationContext,
-  onProgress?: ProgressCallback
-): Promise<{ chapters: ChapterResult[]; error?: string }> {
-  if (!apiKey.trim()) {
-    return { chapters: [], error: 'No API key provided. Please add your Google Gemini API key in Settings.' };
-  }
-
+  chapterNum: number,
+  onProgress: (status: string) => void
+): Promise<string> {
   try {
-    const genAI = new GoogleGenerativeAI(apiKey.trim());
-    const model = genAI.getGenerativeModel({
-      model: MODEL_NAME,
-      systemInstruction: buildSystemPrompt(),
-    });
-
     const chapters = getChapters(context.course);
-    const results: ChapterResult[] = [];
-    const summaries: string[] = [];
-
-    for (const chapter of chapters) {
-      onProgress?.(chapter.number, chapters.length, chapter.title, 'generating');
-
-      try {
-        const prompt = buildChapterPrompt(chapter, context, summaries);
-        const result = await model.generateContent(prompt);
-        const content = result.response.text();
-
-        results.push({
-          number: chapter.number,
-          title: chapter.title,
-          subtitle: chapter.subtitle,
-          content,
-        });
-
-        summaries.push(
-          `Chapter ${chapter.number} (${chapter.title}): ${extractSummary(content)}`
-        );
-
-        onProgress?.(chapter.number, chapters.length, chapter.title, 'done');
-      } catch (err) {
-        onProgress?.(chapter.number, chapters.length, chapter.title, 'error');
-        const message = err instanceof Error ? err.message : 'Unknown error';
-        return {
-          chapters: results,
-          error: `Chapter ${chapter.number} (${chapter.title}) failed: ${message}`,
-        };
-      }
-    }
-
-    return { chapters: results };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to initialize Gemini client';
-    return { chapters: [], error: message };
-  }
-}
-
-export async function regenerateChapter(
-  apiKey: string,
-  context: GenerationContext,
-  chapterNumber: number,
-  previousSummaries: string[]
-): Promise<{ content?: string; error?: string }> {
-  if (!apiKey.trim()) {
-    return { error: 'No API key provided.' };
-  }
-
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey.trim());
-    const model = genAI.getGenerativeModel({
-      model: MODEL_NAME,
-      systemInstruction: buildSystemPrompt(),
-    });
-
-    const chapters = getChapters(context.course);
-    const chapter = chapters.find((c) => c.number === chapterNumber);
+    const chapter = chapters.find(c => c.number === chapterNum);
+    
     if (!chapter) {
-      return { error: `Chapter ${chapterNumber} not found for ${context.course}.` };
+      throw new Error(Chapter ${chapterNum} configuration not found.);
     }
 
-    const prompt = buildChapterPrompt(chapter, context, previousSummaries);
-    const result = await model.generateContent(prompt);
-    return { content: result.response.text() };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    return { error: message };
+    onProgress('generating');
+
+    const model = genAI.getGenerativeModel({ 
+      model: MODEL_NAME 
+    });
+
+    const prompt = `
+      Project Topic: ${context.projectTopic}
+      Course: ${context.course}
+      Specialization: ${context.specialization}
+      Student Name: ${context.studentName}
+      Hall Ticket Number: ${context.hallTicketNumber}
+
+      Generate full comprehensive content for:
+      Chapter ${chapter.number}: ${chapter.title}
+      Focus Guidelines: ${chapter.description}
+      
+      Provide exhaustive academic material with sections, sub-sections, and technical depth.
+    `;
+
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      systemInstruction: buildSystemPrompt(),
+    });
+
+    const response = await result.response;
+    const text = response.text();
+
+    if (!text) {
+      throw new Error('Received empty response from the AI model.');
+    }
+
+    onProgress('done');
+    return text;
+  } catch (error) {
+    onProgress('error');
+    console.error(Generation error in Chapter ${chapterNum}:, error);
+    throw error;
   }
 }
