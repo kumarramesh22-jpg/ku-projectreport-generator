@@ -17,7 +17,7 @@ export interface ChapterResult {
 }
 
 // Use the universally supported text model
-const MODEL_NAME = 'gemini-1.5 -pro'';
+const MODEL_NAME = 'gemini-3.6-flash'';
 
 // Force the production-grade stable API version to prevent 404 errors
 const genAI = new GoogleGenerativeAI(
