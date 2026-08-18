@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { Course } from '@types';
-import { getChapters, type ChapterDefinition } from '@lib/chapters';
+import { getChapters, type ChapterDefinition } from './chapters';
 
 export interface GenerationContext {
   studentName: string;
