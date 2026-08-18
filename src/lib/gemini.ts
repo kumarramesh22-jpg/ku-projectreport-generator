@@ -43,7 +43,7 @@ export async function generateChapter(
     const chapter = chapters.find(c => c.number === chapterNum);
     
     if (!chapter) {
-      throw new Error(Chapter ${chapterNum} configuration not found.);
+      throw new Error('Chapter ${chapterNum} configuration not found.');
     }
 
     onProgress('generating');
